@@ -1,8 +1,8 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
+using Microsoft.Xna.Framework;
 using System;
-using System.Diagnostics;
 
 namespace FirstMonoGame.Scripts
 {
@@ -11,8 +11,10 @@ namespace FirstMonoGame.Scripts
         public Action onUpdate;
 
         private GraphicsDeviceManager graphics;
-        private SpriteBatch _spriteBatch;
+        private SpriteBatch spriteBatch;
+        private SpriteFont spriteFont;
 
+        private Texture2D mainBackgroundSprite;
         private Texture2D backgroundSprite;
         private Texture2D crosshairSprite;
         private Texture2D targetSprite;
@@ -20,18 +22,24 @@ namespace FirstMonoGame.Scripts
         private Vector2 mousePosition;
         private Vector2 currentTargetPosition;
         private Vector2 mouseOffset = new Vector2(50, 50);
-        
-        private Random random;
+        private Vector2 mainMenuStaticTargetPosition = new Vector2(178, 119);
 
-        private float currentTargetRotation = 0;
-        private float currentTargetScale = 1;
+        private Random random;
+        private Song succesSFX;
+        private Song failSFX;
 
         private int screenBoundsMargin = 80;
         private int targetRadius = 40;
         private const int targetOriginOffset = 125;
+        private const int mainMenuStaticTargetRadius = 60;
+
+        private int gameDuration = 20;
+        private bool gameStarted = false;
+
+        private float timeUntilGameStarted = 0;
 
         public int CurrentScore { get; private set; }
-
+        
         public GameController()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -50,44 +58,69 @@ namespace FirstMonoGame.Scripts
             random = new Random();
             GameHelper.GameController = this;
 
-            RandomizeTargetPosition();
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            spriteBatch = new SpriteBatch(GraphicsDevice);
 
             targetSprite = Content.Load<Texture2D>("target");
             backgroundSprite = Content.Load<Texture2D>("sky");
+            mainBackgroundSprite = Content.Load<Texture2D>("sky_main");
             crosshairSprite = Content.Load<Texture2D>("crosshair");
+            spriteFont = Content.Load<SpriteFont>("font");
+            
+            succesSFX = Content.Load<Song>("succesSFX");
+            failSFX = Content.Load<Song>("failSFX");
+            MediaPlayer.Volume = .4f;
         }
 
         protected override void Update(GameTime gameTime)
         {
-            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
+            KeyboardState keyboardState = Keyboard.GetState();
+            if (keyboardState.IsKeyDown(Keys.Escape))
                 Exit();
 
             onUpdate?.Invoke();
-            Window.Title = $"Very cool geam. Current score: {CurrentScore}";
+            Window.Title = $"Aim Trainer Current score: {CurrentScore}";
 
-            HandleMouseInput();
+            //updating crosshair position
+            MouseState currentMouseState = Mouse.GetState();
+            mousePosition = currentMouseState.Position.ToVector2();
+
+            if (!gameStarted) {
+                HandleStartGame(); //simple main menu logic
+                timeUntilGameStarted = (float)gameTime.TotalGameTime.TotalSeconds;
+            }
+            else HandleGameplay(); //run gameplay loop
 
             base.Update(gameTime);
         }
 
-        private void HandleMouseInput() {
-            MouseState currentMouseState = Mouse.GetState();
-            mousePosition = currentMouseState.Position.ToVector2();
-
+        private void HandleStartGame() {
             GameHelper.InputHandler.OnMouseDown(() => {
-                Vector2 adjustedMousePosition = mousePosition + mouseOffset;
-                float mouseTargetDistane = Vector2.Distance(currentTargetPosition, adjustedMousePosition) - targetOriginOffset;
-
-                if (mouseTargetDistane < targetRadius && mouseTargetDistane > -targetRadius) {
-                    CurrentScore++;
+                float mouseTargetDistance = Vector2.Distance(mainMenuStaticTargetPosition, mousePosition);
+                if (mouseTargetDistance < mainMenuStaticTargetRadius) {
+                    gameStarted = true;
+                    MediaPlayer.Play(succesSFX);
                     RandomizeTargetPosition();
                 }
+                else MediaPlayer.Play(failSFX);
+            });
+        }
+
+        private void HandleGameplay() {
+            GameHelper.InputHandler.OnMouseDown(() => {
+                Vector2 adjustedMousePosition = mousePosition + mouseOffset;
+                float mouseTargetDistance = Vector2.Distance(currentTargetPosition, adjustedMousePosition) - targetOriginOffset;
+
+                if (mouseTargetDistance < targetRadius && mouseTargetDistance > -targetRadius) {
+                    CurrentScore++;
+                    MediaPlayer.Play(succesSFX);
+                    RandomizeTargetPosition();
+                }
+                else MediaPlayer.Play(failSFX);
             });
         }
 
@@ -107,18 +140,27 @@ namespace FirstMonoGame.Scripts
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
             Rectangle backgroundRectangle = new Rectangle(0, 0, 982, 720);
             Rectangle croshairRectangle = new Rectangle((int)mousePosition.X, (int)mousePosition.Y, 20, 20);
             Rectangle targetRectangle = new Rectangle((int)currentTargetPosition.X, (int)currentTargetPosition.Y, 96, 94);
 
-            _spriteBatch.Draw(backgroundSprite, backgroundRectangle, Color.White);
-            _spriteBatch.Draw(targetSprite, targetRectangle, Color.White);
-            _spriteBatch.Draw(crosshairSprite, croshairRectangle, Color.White);
+            spriteBatch.Draw(gameStarted ? backgroundSprite : mainBackgroundSprite, backgroundRectangle, Color.White);
+            if(gameStarted) spriteBatch.Draw(targetSprite, targetRectangle, Color.White);
+            spriteBatch.Draw(crosshairSprite, croshairRectangle, Color.White);
 
-            _spriteBatch.End();
+
+            if (gameStarted) {
+                Vector2 timerPosition = new Vector2((Window.ClientBounds.Width / 2f) - 55, 0);
+                
+                float totalSeconds = (float)gameTime.TotalGameTime.TotalSeconds - timeUntilGameStarted;
+                string timerText = totalSeconds.ToString("F2");
+
+                if (gameStarted) spriteBatch.DrawString(spriteFont, timerText, timerPosition, Color.White);
+            }
+
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }

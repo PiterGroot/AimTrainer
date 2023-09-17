@@ -52,6 +52,14 @@ namespace FirstMonoGame.Scripts
 
         public static class RandomHandler {
             public static Random random;
+            
+            public static Color RandomColor() {
+                int r = random.Next(0, 255);
+                int g = random.Next(0, 255);
+                int b = random.Next(0, 255);
+
+                return new Color(r, g, b, 255);
+            }
 
             public static float GetRandomFloatingNumber(float minimum, float maximum) {
                 return (float)random.NextDouble() * (maximum - minimum) + minimum;

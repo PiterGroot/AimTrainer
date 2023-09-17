@@ -25,6 +25,31 @@
 /processorParam:TextureFormat=Color
 /build:crosshair.png
 
+#begin failSFX.wav
+/importer:WavImporter
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:failSFX.wav
+
+#begin font.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:font.spritefont
+
+#begin sky_main.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:sky_main.png
+
 #begin sky.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -36,6 +61,12 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:sky.png
+
+#begin succesSFX.wav
+/importer:WavImporter
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:succesSFX.wav
 
 #begin target.png
 /importer:TextureImporter

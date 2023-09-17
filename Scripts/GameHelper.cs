@@ -18,6 +18,7 @@ namespace FirstMonoGame.Scripts
                 gameController = value;
 
                 gameController.onUpdate += OnUpdate;
+                RandomHandler.random = new Random();
             }
         }
 
@@ -36,7 +37,26 @@ namespace FirstMonoGame.Scripts
             };
         }
 
+        /// <summary>
+        /// Starts a while loop for some amount of time and calls back every update tick during the loop
+        /// </summary>
+        /// <param name="duration"></param>
+        /// <param name="updateCallBack"></param>
+        public static void WhileFor(float duration, Action updateCallBack) {
+            var startTime = DateTime.UtcNow;
+
+            while (DateTime.UtcNow - startTime < TimeSpan.FromSeconds(duration)) updateCallBack?.Invoke();
+        }
+
         private static void OnUpdate() { }
+
+        public static class RandomHandler {
+            public static Random random;
+
+            public static float GetRandomFloatingNumber(float minimum, float maximum) {
+                return (float)random.NextDouble() * (maximum - minimum) + minimum;
+            }
+        }
 
         public static class InputHandler
         {

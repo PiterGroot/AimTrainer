@@ -2,14 +2,16 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Diagnostics;
 
 namespace FirstMonoGame.Scripts
 {
     public class GameController : Game
     {
+        public Action onUpdate;
+
         private GraphicsDeviceManager graphics;
         private SpriteBatch _spriteBatch;
-        public Action onUpdate;
 
         private Texture2D backgroundSprite;
         private Texture2D crosshairSprite;
@@ -17,9 +19,18 @@ namespace FirstMonoGame.Scripts
 
         private Vector2 mousePosition;
         private Vector2 currentTargetPosition;
+        private Vector2 mouseOffset = new Vector2(50, 50);
+        
         private Random random;
 
-        private int currentScore = 0;
+        private float currentTargetRotation = 0;
+        private float currentTargetScale = 1;
+
+        private int screenBoundsMargin = 80;
+        private int targetRadius = 40;
+        private const int targetOriginOffset = 125;
+
+        public int CurrentScore { get; private set; }
 
         public GameController()
         {
@@ -39,7 +50,7 @@ namespace FirstMonoGame.Scripts
             random = new Random();
             GameHelper.GameController = this;
 
-            MoveTargetPosition();
+            RandomizeTargetPosition();
             base.Initialize();
         }
 
@@ -58,28 +69,31 @@ namespace FirstMonoGame.Scripts
                 Exit();
 
             onUpdate?.Invoke();
-            Window.Title = $"Very cool geam. Current score: {currentScore}";
+            Window.Title = $"Very cool geam. Current score: {CurrentScore}";
 
-            MouseState currentMouseState = Mouse.GetState();
-            mousePosition = currentMouseState.Position.ToVector2();
-
-            GameHelper.InputHandler.OnMouseDown(() =>
-            {
-                Vector2 adjustedMousePosition = mousePosition + new Vector2(50, 50);
-                float mouseTargetDistane = Vector2.Distance(currentTargetPosition, adjustedMousePosition) - 125;
-
-                if (mouseTargetDistane < 40 && mouseTargetDistane > -40)
-                {
-                    currentScore++;
-                    MoveTargetPosition();
-                }
-            });
+            HandleMouseInput();
 
             base.Update(gameTime);
         }
-        private void MoveTargetPosition()
+
+        private void HandleMouseInput() {
+            MouseState currentMouseState = Mouse.GetState();
+            mousePosition = currentMouseState.Position.ToVector2();
+
+            GameHelper.InputHandler.OnMouseDown(() => {
+                Vector2 adjustedMousePosition = mousePosition + mouseOffset;
+                float mouseTargetDistane = Vector2.Distance(currentTargetPosition, adjustedMousePosition) - targetOriginOffset;
+
+                if (mouseTargetDistane < targetRadius && mouseTargetDistane > -targetRadius) {
+                    CurrentScore++;
+                    RandomizeTargetPosition();
+                }
+            });
+        }
+
+        private void RandomizeTargetPosition()
         {
-            Vector2 minScreenBounds = Vector2.One * 80;
+            Vector2 minScreenBounds = Vector2.One * screenBoundsMargin;
             int maxX = Window.ClientBounds.Width - (int)minScreenBounds.X;
             int maxY = Window.ClientBounds.Height - (int)minScreenBounds.Y;
 

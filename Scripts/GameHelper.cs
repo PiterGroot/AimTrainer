@@ -6,6 +6,7 @@ using System.Timers;
 
 namespace FirstMonoGame.Scripts
 {
+#pragma warning disable IDE1006 
     public static class GameHelper
     {
         private static GameController gameController;
@@ -48,6 +49,10 @@ namespace FirstMonoGame.Scripts
             while (DateTime.UtcNow - startTime < TimeSpan.FromSeconds(duration)) updateCallBack?.Invoke();
         }
 
+        public static void print(object message) {
+            Debug.WriteLine(message.ToString());    
+        }
+
         private static void OnUpdate() { }
 
         public static class RandomHandler {
@@ -63,6 +68,10 @@ namespace FirstMonoGame.Scripts
 
             public static float GetRandomFloatingNumber(float minimum, float maximum) {
                 return (float)random.NextDouble() * (maximum - minimum) + minimum;
+            }
+
+            public static int GetRandomIntNumber(int minimum, int maximum) {
+                return random.Next(minimum, maximum + 1);
             }
         }
 
@@ -110,4 +119,5 @@ namespace FirstMonoGame.Scripts
             }
         }
     }
+#pragma warning restore IDE1006s
 }

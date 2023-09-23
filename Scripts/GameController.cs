@@ -1,14 +1,18 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using static FirstMonoGame.Scripts.GameHelper;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework;
 using System;
+using System.Diagnostics;
 
 namespace FirstMonoGame.Scripts
 {
     public class GameController : Game
     {
         public Action onUpdate;
+      
+        public GameIdentityManager gameIdentityManager;
 
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
@@ -38,7 +42,8 @@ namespace FirstMonoGame.Scripts
 
         private float timeUntilGameStarted = 0;
 
-        public int CurrentScore { get; private set; }
+        private int hits = 0;
+        private int misses = 0;
         
         public GameController()
         {
@@ -55,8 +60,9 @@ namespace FirstMonoGame.Scripts
 
         protected override void Initialize()
         {
-            random = new Random();
+            gameIdentityManager = new GameIdentityManager();
             GameHelper.GameController = this;
+            random = new Random();
 
             base.Initialize();
         }
@@ -74,6 +80,9 @@ namespace FirstMonoGame.Scripts
             succesSFX = Content.Load<Song>("succesSFX");
             failSFX = Content.Load<Song>("failSFX");
             MediaPlayer.Volume = .4f;
+
+            GameIdentity identity = new GameIdentity("Background", mainBackgroundSprite, -1);
+            GameIdentityManager.Instance.RegisterGameIdentity(identity);
         }
 
         protected override void Update(GameTime gameTime)
@@ -83,7 +92,7 @@ namespace FirstMonoGame.Scripts
                 Exit();
 
             onUpdate?.Invoke();
-            Window.Title = $"Aim Trainer Current score: {CurrentScore}";
+            Window.Title = $"Aim Trainer | Hits: {hits} Misses: {misses}";
 
             //updating crosshair position
             MouseState currentMouseState = Mouse.GetState();
@@ -99,7 +108,7 @@ namespace FirstMonoGame.Scripts
         }
 
         private void HandleStartGame() {
-            GameHelper.InputHandler.OnMouseDown(() => {
+            InputHandler.OnMouseDown(() => {
                 float mouseTargetDistance = Vector2.Distance(mainMenuStaticTargetPosition, mousePosition);
                 if (mouseTargetDistance < mainMenuStaticTargetRadius) {
                     gameStarted = true;
@@ -111,16 +120,20 @@ namespace FirstMonoGame.Scripts
         }
 
         private void HandleGameplay() {
-            GameHelper.InputHandler.OnMouseDown(() => {
+            InputHandler.OnMouseDown(() => {
                 Vector2 adjustedMousePosition = mousePosition + mouseOffset;
                 float mouseTargetDistance = Vector2.Distance(currentTargetPosition, adjustedMousePosition) - targetOriginOffset;
 
                 if (mouseTargetDistance < targetRadius && mouseTargetDistance > -targetRadius) {
-                    CurrentScore++;
+                    hits++;
                     MediaPlayer.Play(succesSFX);
                     RandomizeTargetPosition();
                 }
-                else MediaPlayer.Play(failSFX);
+                else {
+                    misses++;
+                    MediaPlayer.Play(failSFX);
+                    RandomizeTargetPosition();
+                }
             });
         }
 
@@ -142,22 +155,40 @@ namespace FirstMonoGame.Scripts
             GraphicsDevice.Clear(Color.CornflowerBlue);
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
+
+            int l = GameIdentityManager.Instance.ActiveGameIdentities.Count;
+            for (int i = 0; i < l; i++) {
+                GameIdentity identity = GameIdentityManager.Instance.ActiveGameIdentities[i];
+                Transform transform = identity.Transform;
+                Visual visual = identity.Visual;
+
+                int scaleX = visual.targetTexture.Width * (int)transform.scale.X;
+                int scaleY = visual.targetTexture.Height * (int)transform.scale.Y;
+
+                Rectangle identityRectangle = new Rectangle((int)transform.position.X, (int)transform.position.Y, scaleX, scaleY);
+                spriteBatch.Draw(visual.targetTexture, identityRectangle, visual.textureColor);
+            }
+
             Rectangle backgroundRectangle = new Rectangle(0, 0, 982, 720);
-            Rectangle croshairRectangle = new Rectangle((int)mousePosition.X, (int)mousePosition.Y, 20, 20);
-            Rectangle targetRectangle = new Rectangle((int)currentTargetPosition.X, (int)currentTargetPosition.Y, 96, 94);
+            //Rectangle croshairRectangle = new Rectangle((int)mousePosition.X, (int)mousePosition.Y, 20, 20);
+            //Rectangle targetRectangle = new Rectangle((int)currentTargetPosition.X, (int)currentTargetPosition.Y, 96, 94);
 
             spriteBatch.Draw(gameStarted ? backgroundSprite : mainBackgroundSprite, backgroundRectangle, Color.White);
-            if(gameStarted) spriteBatch.Draw(targetSprite, targetRectangle, Color.White);
-            spriteBatch.Draw(crosshairSprite, croshairRectangle, Color.White);
+            //if(gameStarted) spriteBatch.Draw(targetSprite, targetRectangle, Color.White);
+            //spriteBatch.Draw(crosshairSprite, croshairRectangle, Color.White);
 
 
             if (gameStarted) {
                 Vector2 timerPosition = new Vector2((Window.ClientBounds.Width / 2f) - 55, 0);
                 
-                float totalSeconds = (float)gameTime.TotalGameTime.TotalSeconds - timeUntilGameStarted;
-                string timerText = totalSeconds.ToString("F2");
+                float gameTimer = (float)gameTime.TotalGameTime.TotalSeconds - timeUntilGameStarted;
+                string timerText = gameTimer.ToString("F2");
 
-                if (gameStarted) spriteBatch.DrawString(spriteFont, timerText, timerPosition, Color.White);
+                if(gameTimer >= gameDuration) {
+                    gameStarted = false;
+                }
+
+                spriteBatch.DrawString(spriteFont, timerText, timerPosition, Color.White);
             }
 
             spriteBatch.End();

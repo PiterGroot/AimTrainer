@@ -36,12 +36,7 @@ namespace FirstMonoGame.Scripts {
     }
 
     public class Transform {
-        public Transform(Vector3 position, Quaternion rotation) {
-            this.position = position;
-            this.rotation = rotation;
-        }
-
-        public Vector3 position;
+        public Vector2 position = Vector2.Zero;
         public Quaternion rotation;
         public Vector2 scale = Vector2.One;
     }

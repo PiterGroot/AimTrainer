@@ -20,6 +20,7 @@ namespace FirstMonoGame.Scripts {
             if (!ActiveGameIdentities.Contains(gameIdentity)) {
                 ActiveGameIdentities.Add(gameIdentity);
                 ActiveGameIdentities = ActiveGameIdentities.OrderByDescending(identity => identity.RenderOrder).ToList();
+                ActiveGameIdentities.Reverse();
             }
         }
     }

@@ -44,7 +44,10 @@ namespace FirstMonoGame.Scripts
 
         private int hits = 0;
         private int misses = 0;
-        
+
+        GameIdentity crosshair;
+
+
         public GameController()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -81,8 +84,13 @@ namespace FirstMonoGame.Scripts
             failSFX = Content.Load<Song>("failSFX");
             MediaPlayer.Volume = .4f;
 
-            GameIdentity identity = new GameIdentity("Background", mainBackgroundSprite, -1);
-            GameIdentityManager.Instance.RegisterGameIdentity(identity);
+            GameIdentity mainBackground = new GameIdentity("Background", mainBackgroundSprite, -1);
+            mainBackground.Transform.scale = Vector2.One * 2;
+            GameIdentityManager.Instance.RegisterGameIdentity(mainBackground);
+
+            crosshair = new GameIdentity("Crosshair", crosshairSprite, 99);
+            crosshair.Transform.scale = new Vector2(2f, 2f);
+            GameIdentityManager.Instance.RegisterGameIdentity(crosshair);
         }
 
         protected override void Update(GameTime gameTime)
@@ -97,6 +105,7 @@ namespace FirstMonoGame.Scripts
             //updating crosshair position
             MouseState currentMouseState = Mouse.GetState();
             mousePosition = currentMouseState.Position.ToVector2();
+            crosshair.Transform.position = mousePosition;
 
             if (!gameStarted) {
                 HandleStartGame(); //simple main menu logic
@@ -169,11 +178,11 @@ namespace FirstMonoGame.Scripts
                 spriteBatch.Draw(visual.targetTexture, identityRectangle, visual.textureColor);
             }
 
-            Rectangle backgroundRectangle = new Rectangle(0, 0, 982, 720);
+            //Rectangle backgroundRectangle = new Rectangle(0, 0, 982, 720);
             //Rectangle croshairRectangle = new Rectangle((int)mousePosition.X, (int)mousePosition.Y, 20, 20);
             //Rectangle targetRectangle = new Rectangle((int)currentTargetPosition.X, (int)currentTargetPosition.Y, 96, 94);
 
-            spriteBatch.Draw(gameStarted ? backgroundSprite : mainBackgroundSprite, backgroundRectangle, Color.White);
+            //spriteBatch.Draw(gameStarted ? backgroundSprite : mainBackgroundSprite, backgroundRectangle, Color.White);
             //if(gameStarted) spriteBatch.Draw(targetSprite, targetRectangle, Color.White);
             //spriteBatch.Draw(crosshairSprite, croshairRectangle, Color.White);
 

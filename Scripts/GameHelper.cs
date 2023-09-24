@@ -18,8 +18,6 @@ namespace FirstMonoGame.Scripts
             {
                 if (value == null) return;
                 gameController = value;
-
-                gameController.onUpdate += OnUpdate;
                 RandomHandler.random = new Random();
             }
         }
@@ -53,19 +51,21 @@ namespace FirstMonoGame.Scripts
         public static void print(object message) {
             Debug.WriteLine(message.ToString());
         }
-        
-        /// <summary>
-        /// Draws a GameIdentity to the screen with its corrosponding transform and visual
-        /// </summary>
-        /// <param name="batch">SpriteBatch used to draw texture2D</param>
-        /// <param name="gameIdentity">GameIdentity to draw</param>
-        public static void DrawIdentity(SpriteBatch batch, GameIdentity gameIdentity) {
-            batch.Draw(gameIdentity.Visual.targetTexture, gameIdentity.Transform.position, 
-            null, gameIdentity.Visual.textureColor, gameIdentity.Transform.rotation, Vector2.Zero,
-            gameIdentity.Transform.scale, SpriteEffects.None, 0);
+
+        public static void DrawText(SpriteBatch spriteBatch, SpriteFont font, object message, Vector2 position) {
+            spriteBatch.DrawString(font, message.ToString(), position, Color.White);
         }
 
-        private static void OnUpdate() { }
+        public static void DrawText(SpriteBatch spriteBatch, SpriteFont font, object message, Vector2 position, Color textColor) {
+            spriteBatch.DrawString(font, message.ToString(), position, textColor);
+        }
+
+        public static void ExitWithDebugMessage(object message) {
+            Debug.WriteLine("");
+            Debug.WriteLine($"{message}");
+            Debug.WriteLine("");
+            Environment.Exit(0);
+        }
 
         public static class RandomHandler {
             public static Random random;
@@ -118,7 +118,6 @@ namespace FirstMonoGame.Scripts
             public static void OnMouseUp(Action onMouseUp)
             {
                 MouseState currentMouseState = Mouse.GetState();
-
                 if (currentMouseState.LeftButton == ButtonState.Pressed)
                 {
                     mouseReleased = true;

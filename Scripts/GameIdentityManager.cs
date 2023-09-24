@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Content;
+using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Linq;
 using System;
@@ -9,9 +12,11 @@ namespace FirstMonoGame.Scripts {
         public static GameIdentityManager Instance;
         
         public List<GameIdentity> ActiveGameIdentities { get; set; }
-        
-        public GameIdentityManager() {
+        public ContentManager ContentManager { get; set; }
+
+        public GameIdentityManager(ContentManager manager) {
             ActiveGameIdentities = new List<GameIdentity>();
+            ContentManager = manager;
             Instance = this;
         }
 
@@ -21,10 +26,8 @@ namespace FirstMonoGame.Scripts {
                 UpdateGameIdentitiesOrder();
             }
             else {
-                Debug.WriteLine("");
-                Debug.WriteLine($"GameIdentity {gameIdentity.Name}[{gameIdentity.UniqueId}] already instantiated");
-                Debug.WriteLine("");
-                Environment.Exit(0);
+                string message = $"GameIdentity {gameIdentity.Name}[{gameIdentity.UniqueId}] is already instantiated";
+                GameHelper.ExitWithDebugMessage(message);
             }
         }
 
@@ -34,16 +37,35 @@ namespace FirstMonoGame.Scripts {
                 UpdateGameIdentitiesOrder();
             }
             else {
-                Debug.WriteLine("");
-                Debug.WriteLine($"GameIdentity {gameIdentity.Name}[{gameIdentity.UniqueId}] cannot be destroyed because it does not exist");
-                Debug.WriteLine("");
-                Environment.Exit(0);
+                string message = $"GameIdentity {gameIdentity.Name}[{gameIdentity.UniqueId}] cannot be destroyed because it does not exist";
+                GameHelper.ExitWithDebugMessage(message);
             }
         }
 
         private void UpdateGameIdentitiesOrder() {
             ActiveGameIdentities = ActiveGameIdentities.OrderByDescending(identity => identity.RenderOrder).ToList();
             ActiveGameIdentities.Reverse();
+        }
+
+        public void DrawGameIdentities(SpriteBatch spriteBatch, GraphicsDevice device, GameTime gameTime) {
+            device.Clear(Color.CornflowerBlue);
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+
+            int l = ActiveGameIdentities.Count;
+            for (int i = 0; i < l; i++) {
+                GameIdentity identity = ActiveGameIdentities[i];
+                if (!identity.Active) continue;
+
+                DrawIdentity(spriteBatch, ActiveGameIdentities[i]);
+            }
+
+            spriteBatch.End();
+        }
+
+        private void DrawIdentity(SpriteBatch batch, GameIdentity gameIdentity) {
+            batch.Draw(gameIdentity.Visual.targetTexture, gameIdentity.Transform.position,
+            null, gameIdentity.Visual.textureColor, gameIdentity.Transform.rotation, Vector2.Zero,
+            gameIdentity.Transform.scale, SpriteEffects.None, 0);
         }
     }
 }

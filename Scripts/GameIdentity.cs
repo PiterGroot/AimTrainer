@@ -2,18 +2,18 @@
 using Microsoft.Xna.Framework;
 
 namespace FirstMonoGame.Scripts {
-    public class GameIdentity {
+    public class GameIdentity{
 
-        public GameIdentity(string objectName = "", Texture2D texture = null, int renderOrder = 0) {
+        public GameIdentity(string objectName = "", string texture = "", int renderOrder = 0) {
             Name = objectName == string.Empty ? "NewGameIdentity" : objectName;
             UniqueId = GameHelper.RandomHandler.GetRandomIntNumber(0, 99999);
 
+            Texture2D chosenTexture = GameIdentityManager.Instance.ContentManager.Load<Texture2D>(texture);
+
             Transform = new Transform();
-            Visual = new Visual(texture, Color.White);
+            Visual = new Visual(chosenTexture, Color.White);
 
             RenderOrder = renderOrder;
-            Visual.targetTexture = texture;
-
             Active = true;
         }
 

@@ -2,9 +2,7 @@
 using Microsoft.Xna.Framework.Content;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using System.Diagnostics;
 using System.Linq;
-using System;
 
 namespace FirstMonoGame.Scripts {
     public class GameIdentityManager {
@@ -63,8 +61,8 @@ namespace FirstMonoGame.Scripts {
         }
 
         private void DrawIdentity(SpriteBatch batch, GameIdentity gameIdentity) {
-            batch.Draw(gameIdentity.Visual.targetTexture, gameIdentity.Transform.position,
-            null, gameIdentity.Visual.textureColor, gameIdentity.Transform.rotation, Vector2.Zero,
+            batch.Draw(gameIdentity.Visual.targetTexture, gameIdentity.Transform.position, null, 
+            gameIdentity.Visual.textureColor, gameIdentity.Transform.rotation, gameIdentity.Transform.originOffset,
             gameIdentity.Transform.scale, SpriteEffects.None, 0);
         }
     }

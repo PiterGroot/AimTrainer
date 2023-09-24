@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 namespace FirstMonoGame.Scripts {
     public class GameIdentity{
 
-        public GameIdentity(string objectName = "", string texture = "", int renderOrder = 0) {
+        public GameIdentity(string objectName = "", string texture = "", int renderOrder = 0, bool orginSelf = true) {
             Name = objectName == string.Empty ? "NewGameIdentity" : objectName;
             UniqueId = GameHelper.RandomHandler.GetRandomIntNumber(0, 99999);
 
@@ -12,6 +12,8 @@ namespace FirstMonoGame.Scripts {
 
             Transform = new Transform();
             Visual = new Visual(chosenTexture, Color.White);
+
+            if(orginSelf) Transform.originOffset = new Vector2(chosenTexture.Width / 2f, chosenTexture.Height / 2f);
 
             RenderOrder = renderOrder;
             Active = true;
@@ -40,8 +42,9 @@ namespace FirstMonoGame.Scripts {
     }
 
     public class Transform {
+        public float rotation = 0;
         public Vector2 position = Vector2.Zero;
-        public float rotation;
         public Vector2 scale = Vector2.One;
+        public Vector2 originOffset = Vector2.Zero;
     }
 }

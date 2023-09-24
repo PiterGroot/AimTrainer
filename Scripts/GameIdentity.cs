@@ -1,5 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework;
 
 namespace FirstMonoGame.Scripts {
     public class GameIdentity {
@@ -13,10 +13,14 @@ namespace FirstMonoGame.Scripts {
 
             RenderOrder = renderOrder;
             Visual.targetTexture = texture;
+
+            Active = true;
         }
 
         public string Name { get; set; }
         public int UniqueId { get; set; }
+
+        public bool Active { get; set; }
 
         public int RenderOrder { get; set; }
 
@@ -37,7 +41,7 @@ namespace FirstMonoGame.Scripts {
 
     public class Transform {
         public Vector2 position = Vector2.Zero;
-        public Quaternion rotation;
+        public float rotation;
         public Vector2 scale = Vector2.One;
     }
 }

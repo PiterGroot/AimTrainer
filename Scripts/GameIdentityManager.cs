@@ -1,8 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System;
 
 namespace FirstMonoGame.Scripts {
     public class GameIdentityManager {
@@ -16,12 +15,35 @@ namespace FirstMonoGame.Scripts {
             Instance = this;
         }
 
-        public void RegisterGameIdentity(GameIdentity gameIdentity) {
+        public void InstantiateIdentity(GameIdentity gameIdentity) {
             if (!ActiveGameIdentities.Contains(gameIdentity)) {
                 ActiveGameIdentities.Add(gameIdentity);
-                ActiveGameIdentities = ActiveGameIdentities.OrderByDescending(identity => identity.RenderOrder).ToList();
-                ActiveGameIdentities.Reverse();
+                UpdateGameIdentitiesOrder();
             }
+            else {
+                Debug.WriteLine("");
+                Debug.WriteLine($"GameIdentity {gameIdentity.Name}[{gameIdentity.UniqueId}] already instantiated");
+                Debug.WriteLine("");
+                Environment.Exit(0);
+            }
+        }
+
+        public void DestroyIdentity(GameIdentity gameIdentity) {
+            if (ActiveGameIdentities.Contains(gameIdentity)) {
+                ActiveGameIdentities.Remove(gameIdentity);
+                UpdateGameIdentitiesOrder();
+            }
+            else {
+                Debug.WriteLine("");
+                Debug.WriteLine($"GameIdentity {gameIdentity.Name}[{gameIdentity.UniqueId}] cannot be destroyed because it does not exist");
+                Debug.WriteLine("");
+                Environment.Exit(0);
+            }
+        }
+
+        private void UpdateGameIdentitiesOrder() {
+            ActiveGameIdentities = ActiveGameIdentities.OrderByDescending(identity => identity.RenderOrder).ToList();
+            ActiveGameIdentities.Reverse();
         }
     }
 }

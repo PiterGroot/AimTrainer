@@ -1,8 +1,9 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
+using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Timers;
+using System;
 
 namespace FirstMonoGame.Scripts
 {
@@ -50,7 +51,18 @@ namespace FirstMonoGame.Scripts
         }
 
         public static void print(object message) {
-            Debug.WriteLine(message.ToString());    
+            Debug.WriteLine(message.ToString());
+        }
+        
+        /// <summary>
+        /// Draws a GameIdentity to the screen with its corrosponding transform and visual
+        /// </summary>
+        /// <param name="batch">SpriteBatch used to draw texture2D</param>
+        /// <param name="gameIdentity">GameIdentity to draw</param>
+        public static void DrawIdentity(SpriteBatch batch, GameIdentity gameIdentity) {
+            batch.Draw(gameIdentity.Visual.targetTexture, gameIdentity.Transform.position, 
+            null, gameIdentity.Visual.textureColor, gameIdentity.Transform.rotation, Vector2.Zero,
+            gameIdentity.Transform.scale, SpriteEffects.None, 0);
         }
 
         private static void OnUpdate() { }

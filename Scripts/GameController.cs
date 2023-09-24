@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework;
 using System;
-using System.Diagnostics;
 
 namespace FirstMonoGame.Scripts
 {
@@ -24,7 +23,6 @@ namespace FirstMonoGame.Scripts
         private Texture2D targetSprite;
 
         private Vector2 mousePosition;
-        private Vector2 currentTargetPosition;
         private Vector2 mouseOffset = new Vector2(50, 50);
         private Vector2 mainMenuStaticTargetPosition = new Vector2(178, 119);
 
@@ -45,8 +43,9 @@ namespace FirstMonoGame.Scripts
         private int hits = 0;
         private int misses = 0;
 
-        GameIdentity crosshair;
-
+        private GameIdentity crosshair;
+        private GameIdentity target;
+        private GameIdentity gameBackground;
 
         public GameController()
         {
@@ -86,11 +85,11 @@ namespace FirstMonoGame.Scripts
 
             GameIdentity mainBackground = new GameIdentity("Background", mainBackgroundSprite, -1);
             mainBackground.Transform.scale = Vector2.One * 2;
-            GameIdentityManager.Instance.RegisterGameIdentity(mainBackground);
+            GameIdentityManager.Instance.InstantiateIdentity(mainBackground);
 
             crosshair = new GameIdentity("Crosshair", crosshairSprite, 99);
             crosshair.Transform.scale = new Vector2(2f, 2f);
-            GameIdentityManager.Instance.RegisterGameIdentity(crosshair);
+            GameIdentityManager.Instance.InstantiateIdentity(crosshair);
         }
 
         protected override void Update(GameTime gameTime)
@@ -121,6 +120,15 @@ namespace FirstMonoGame.Scripts
                 float mouseTargetDistance = Vector2.Distance(mainMenuStaticTargetPosition, mousePosition);
                 if (mouseTargetDistance < mainMenuStaticTargetRadius) {
                     gameStarted = true;
+
+                    target = new GameIdentity("Target", targetSprite, 2);
+                    target.Transform.scale = Vector2.One * .5f;
+                    GameIdentityManager.Instance.InstantiateIdentity(target);
+
+                    gameBackground = new GameIdentity("GameBackground", backgroundSprite, 1);
+                    gameBackground.Transform.scale = Vector2.One * 2;
+                    GameIdentityManager.Instance.InstantiateIdentity(gameBackground);
+
                     MediaPlayer.Play(succesSFX);
                     RandomizeTargetPosition();
                 }
@@ -131,7 +139,7 @@ namespace FirstMonoGame.Scripts
         private void HandleGameplay() {
             InputHandler.OnMouseDown(() => {
                 Vector2 adjustedMousePosition = mousePosition + mouseOffset;
-                float mouseTargetDistance = Vector2.Distance(currentTargetPosition, adjustedMousePosition) - targetOriginOffset;
+                float mouseTargetDistance = Vector2.Distance(target.Transform.position, adjustedMousePosition) - targetOriginOffset;
 
                 if (mouseTargetDistance < targetRadius && mouseTargetDistance > -targetRadius) {
                     hits++;
@@ -156,7 +164,7 @@ namespace FirstMonoGame.Scripts
             randomScreenPosition.X = random.Next((int)minScreenBounds.X, maxX);
             randomScreenPosition.Y = random.Next((int)minScreenBounds.Y, maxY);
 
-            currentTargetPosition = randomScreenPosition;
+            target.Transform.position = randomScreenPosition;
         }
 
         protected override void Draw(GameTime gameTime)
@@ -164,28 +172,14 @@ namespace FirstMonoGame.Scripts
             GraphicsDevice.Clear(Color.CornflowerBlue);
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-
             int l = GameIdentityManager.Instance.ActiveGameIdentities.Count;
-            for (int i = 0; i < l; i++) {
+            for (int i = 0; i < l; i++) 
+            {
                 GameIdentity identity = GameIdentityManager.Instance.ActiveGameIdentities[i];
-                Transform transform = identity.Transform;
-                Visual visual = identity.Visual;
-
-                int scaleX = visual.targetTexture.Width * (int)transform.scale.X;
-                int scaleY = visual.targetTexture.Height * (int)transform.scale.Y;
-
-                Rectangle identityRectangle = new Rectangle((int)transform.position.X, (int)transform.position.Y, scaleX, scaleY);
-                spriteBatch.Draw(visual.targetTexture, identityRectangle, visual.textureColor);
+                if (!identity.Active) continue;
+                
+                DrawIdentity(spriteBatch, GameIdentityManager.Instance.ActiveGameIdentities[i]);
             }
-
-            //Rectangle backgroundRectangle = new Rectangle(0, 0, 982, 720);
-            //Rectangle croshairRectangle = new Rectangle((int)mousePosition.X, (int)mousePosition.Y, 20, 20);
-            //Rectangle targetRectangle = new Rectangle((int)currentTargetPosition.X, (int)currentTargetPosition.Y, 96, 94);
-
-            //spriteBatch.Draw(gameStarted ? backgroundSprite : mainBackgroundSprite, backgroundRectangle, Color.White);
-            //if(gameStarted) spriteBatch.Draw(targetSprite, targetRectangle, Color.White);
-            //spriteBatch.Draw(crosshairSprite, croshairRectangle, Color.White);
-
 
             if (gameStarted) {
                 Vector2 timerPosition = new Vector2((Window.ClientBounds.Width / 2f) - 55, 0);
@@ -194,6 +188,8 @@ namespace FirstMonoGame.Scripts
                 string timerText = gameTimer.ToString("F2");
 
                 if(gameTimer >= gameDuration) {
+                    GameIdentityManager.Instance.DestroyIdentity(gameBackground);
+                    GameIdentityManager.Instance.DestroyIdentity(target);
                     gameStarted = false;
                 }
 

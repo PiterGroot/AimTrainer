@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Timers;
 using System;
+using Microsoft.Xna.Framework.Media;
 
 namespace FirstMonoGame.Scripts
 {
@@ -11,6 +12,7 @@ namespace FirstMonoGame.Scripts
     public static class GameHelper
     {
         private static GameController gameController;
+        public static GraphicsDevice graphicsDevice;
         public static GameController GameController
         {
             get => gameController;
@@ -37,17 +39,6 @@ namespace FirstMonoGame.Scripts
             };
         }
 
-        /// <summary>
-        /// Starts a while loop for some amount of time and calls back every update tick during the loop
-        /// </summary>
-        /// <param name="duration"></param>
-        /// <param name="updateCallBack"></param>
-        public static void WhileFor(float duration, Action updateCallBack) {
-            var startTime = DateTime.UtcNow;
-
-            while (DateTime.UtcNow - startTime < TimeSpan.FromSeconds(duration)) updateCallBack?.Invoke();
-        }
-
         public static void print(object message) {
             Debug.WriteLine(message.ToString());
         }
@@ -58,6 +49,25 @@ namespace FirstMonoGame.Scripts
 
         public static void DrawText(SpriteBatch spriteBatch, SpriteFont font, object message, Vector2 position, Color textColor) {
             spriteBatch.DrawString(font, message.ToString(), position, textColor);
+        }
+
+        public static void DrawStaticTexture(SpriteBatch spriteBatch, Texture2D texture, Vector2 position, Color color, float rotation, Vector2 scale) {
+            Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
+            spriteBatch.Draw(texture, position, null, color, rotation, origin, scale, SpriteEffects.None, 0);
+        }
+
+        public static bool IsMouseInsideWindow() {
+            MouseState mouseState = Mouse.GetState();
+            return graphicsDevice.Viewport.Bounds.Contains(mouseState.Position);
+        }
+
+        public static void PlaySFX(Song sfx, bool doSafetyChecks = true) {
+            if (doSafetyChecks) {
+                if (IsMouseInsideWindow() && GameController.IsActive) {
+                    MediaPlayer.Play(sfx);
+                }
+            }
+            else MediaPlayer.Play(sfx);
         }
 
         public static void ExitWithDebugMessage(object message) {

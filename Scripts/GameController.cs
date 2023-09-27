@@ -2,24 +2,27 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using MonoGame.Extended.Tweening;
 using Microsoft.Xna.Framework;
 using System;
+using MonoGame.Extended;
+using Microsoft.Xna.Framework.Content;
 
 namespace FirstMonoGame.Scripts
 {
 #pragma warning disable IDE0090 
     public class GameController : Game
     {
-        public GameIdentityManager gameIdentityManager;
+        private GameIdentityManager gameIdentityManager;
 
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         private SpriteFont spriteFont;
 
+        public ContentManager ContentManager => Content;
         private GameTime GameTime { get; set; }
 
         private Vector2 mousePosition;
-        private Vector2 mouseOffset = new Vector2(50, 50);
         private Vector2 mainMenuStaticTargetPosition = new Vector2(188, 129);
 
         private Random random;
@@ -46,6 +49,8 @@ namespace FirstMonoGame.Scripts
         private GameIdentity gameBackground;
         private GameIdentity debugObject;
 
+        private readonly Tweener tweener = new Tweener();
+
         public GameController()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -66,6 +71,7 @@ namespace FirstMonoGame.Scripts
             gameIdentityManager = new GameIdentityManager(Content);
 
             GameHelper.GameController = this;
+            GameHelper.graphicsDevice = GraphicsDevice;
             random = new Random();
 
             base.Initialize();
@@ -89,6 +95,8 @@ namespace FirstMonoGame.Scripts
             crosshair.Transform.scale = new Vector2(2f, 2f);
             
             GameIdentityManager.Instance.InstantiateIdentity(crosshair);
+
+            
         }
 
         protected override void Update(GameTime gameTime)
@@ -111,7 +119,9 @@ namespace FirstMonoGame.Scripts
             }
             else HandleGameplay(); //run gameplay loop
 
-            gameIdentityManager.DrawGameIdentities(spriteBatch, GraphicsDevice, gameTime);
+            gameIdentityManager.DrawGameIdentities(spriteBatch, GraphicsDevice);
+            tweener.Update(gameTime.GetElapsedSeconds());
+            
             base.Update(gameTime);
         }
 
@@ -130,10 +140,10 @@ namespace FirstMonoGame.Scripts
                     gameBackground.Transform.scale = Vector2.One * 2;
                     GameIdentityManager.Instance.InstantiateIdentity(gameBackground);
 
-                    MediaPlayer.Play(succesSFX);
+                    PlaySFX(succesSFX);
                     RandomizeTargetPosition();
                 }
-                else MediaPlayer.Play(failSFX);
+                else PlaySFX(failSFX);
             });
         }
 
@@ -150,6 +160,7 @@ namespace FirstMonoGame.Scripts
                 MediaPlayer.Play(hitTarget ? succesSFX : failSFX);
                 RandomizeTargetPosition();
             });
+
         }
 
         private void UpdateGameTimer() {
@@ -174,6 +185,12 @@ namespace FirstMonoGame.Scripts
             randomScreenPosition.Y = random.Next((int)minScreenBounds.Y, maxY);
 
             target.Transform.position = randomScreenPosition;
+            //target.Transform.scale = (Vector2.One * .5f) * RandomHandler.GetRandomFloatingNumber(.85f, 1.15f);
+
+            tweener.CancelAndCompleteAll();
+            tweener.TweenTo(target.Transform, target => target.scale, new Vector2(.6f, .6f), .1f, 0)
+                .AutoReverse()
+                .Easing(EasingFunctions.CubicIn);
         }
 
         protected override void Draw(GameTime gameTime)

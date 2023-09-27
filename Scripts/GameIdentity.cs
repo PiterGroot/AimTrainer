@@ -8,12 +8,18 @@ namespace FirstMonoGame.Scripts {
             Name = objectName == string.Empty ? "NewGameIdentity" : objectName;
             UniqueId = GameHelper.RandomHandler.GetRandomIntNumber(0, 99999);
 
-            Texture2D chosenTexture = GameIdentityManager.Instance.ContentManager.Load<Texture2D>(texture);
+            Texture2D loadedTexture = null;
+            try {
+                loadedTexture = GameIdentityManager.Instance.ContentManager.Load<Texture2D>(texture);
+            }
+            catch {
+                loadedTexture = GameIdentityManager.Instance.ContentManager.Load<Texture2D>("null");
+            }
 
             Transform = new Transform();
-            Visual = new Visual(chosenTexture, Color.White);
+            Visual = new Visual(loadedTexture, Color.White);
 
-            if(orginSelf) Transform.originOffset = new Vector2(chosenTexture.Width / 2f, chosenTexture.Height / 2f);
+            if(orginSelf) Transform.originOffset = new Vector2(loadedTexture.Width / 2f, loadedTexture.Height / 2f);
 
             RenderOrder = renderOrder;
             Active = true;

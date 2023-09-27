@@ -45,7 +45,7 @@ namespace FirstMonoGame.Scripts {
             ActiveGameIdentities.Reverse();
         }
 
-        public void DrawGameIdentities(SpriteBatch spriteBatch, GraphicsDevice device, GameTime gameTime) {
+        public void DrawGameIdentities(SpriteBatch spriteBatch, GraphicsDevice device) {
             device.Clear(Color.CornflowerBlue);
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
@@ -54,7 +54,7 @@ namespace FirstMonoGame.Scripts {
                 GameIdentity identity = ActiveGameIdentities[i];
                 if (!identity.Active) continue;
 
-                DrawIdentity(spriteBatch, ActiveGameIdentities[i]);
+                DrawIdentity(spriteBatch, identity);
             }
 
             spriteBatch.End();

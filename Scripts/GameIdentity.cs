@@ -6,7 +6,11 @@ namespace FirstMonoGame.Scripts {
 
         public GameIdentity(string objectName = "", string texture = "", int renderOrder = 0, bool orginSelf = true) {
             Name = objectName == string.Empty ? "NewGameIdentity" : objectName;
-            UniqueId = GameHelper.RandomHandler.GetRandomIntNumber(0, 99999);
+
+            while (true) {
+                UniqueId = GameHelper.RandomHandler.GetRandomIntNumber(0, 99999);
+                if (GameIdentityManager.Instance.IsUniqueIdentity(UniqueId)) break;
+            }
 
             Texture2D loadedTexture = null;
             try {
@@ -17,7 +21,7 @@ namespace FirstMonoGame.Scripts {
             }
 
             Transform = new Transform();
-            Visual = new Visual(loadedTexture, Color.White);
+            Visual = new GameVisual(loadedTexture, Color.White);
 
             if(orginSelf) Transform.originOffset = new Vector2(loadedTexture.Width / 2f, loadedTexture.Height / 2f);
 
@@ -29,16 +33,15 @@ namespace FirstMonoGame.Scripts {
         public int UniqueId { get; set; }
 
         public bool Active { get; set; }
-
         public int RenderOrder { get; set; }
 
         public Transform Transform { get; set; }
-        public Visual Visual { get; set; }
+        public GameVisual Visual { get; set; }
 
     }
 
-    public class Visual {
-        public Visual(Texture2D targetTexture, Color textureColor) {
+    public class GameVisual {
+        public GameVisual(Texture2D targetTexture, Color textureColor) {
             this.targetTexture = targetTexture;
             this.textureColor = textureColor;
         }

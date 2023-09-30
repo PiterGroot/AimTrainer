@@ -1,11 +1,11 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework.Input;
+using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using System.Diagnostics;
 using System.Timers;
 using System;
-using Microsoft.Xna.Framework.Media;
-using System.Collections.Generic;
 
 namespace FirstMonoGame.Scripts
 {
@@ -23,7 +23,7 @@ namespace FirstMonoGame.Scripts
             {
                 if (value == null) return;
                 gameController = value;
-                RandomHandler.random = new Random();
+                RandomHandler.InitializeRandom();
                 GameController.OnUpdate += OnUpdate;
             }
         }
@@ -137,8 +137,12 @@ namespace FirstMonoGame.Scripts
         }
 
         public static class RandomHandler {
-            public static Random random;
+            private static Random random;
             
+            public static void InitializeRandom() {
+                random = new Random();
+            }
+
             public static Color RandomColor() {
                 int r = random.Next(0, 255);
                 int g = random.Next(0, 255);

@@ -1,12 +1,12 @@
 ﻿using static FirstMonoGame.Scripts.GameHelper;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using MonoGame.Extended.Tweening;
 using Microsoft.Xna.Framework;
-using System;
 using MonoGame.Extended;
-using Microsoft.Xna.Framework.Content;
+using System;
 
 namespace FirstMonoGame.Scripts
 {
@@ -14,13 +14,13 @@ namespace FirstMonoGame.Scripts
     public class GameController : Game
     {
         public Action<GameTime> OnUpdate { get; set; }
+        private GameTime GameTime { get; set; }
+        public ContentManager ContentManager => Content;
+
+        private readonly Tweener tweener = new Tweener();
 
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
-        private SpriteFont spriteFont;
-
-        public ContentManager ContentManager => Content;
-        private GameTime GameTime { get; set; }
 
         private Vector2 mousePosition;
         private Vector2 mainMenuStaticTargetPosition = new Vector2(188, 129);
@@ -29,29 +29,29 @@ namespace FirstMonoGame.Scripts
         private Song succesSFX;
         private Song failSFX;
 
-        private int screenBoundsMargin = 80;
-        private int targetRadius = 45;
-        private const int mainMenuStaticTargetRadius = 60;
-
-        private int gameDuration = 5;
-        private bool gameStarted = false;
-        private bool gameEnded = false;
-
-        private float timeUntilGameStarted = 0;
-
-        private string timerText;
-        private Vector2 timerPositon;
-
-        private int hits = 0;
-        private int misses = 0;
-
         private GameIdentity crosshair;
         private GameIdentity target;
         private GameIdentity gameBackground;
         private GameIdentity endScreen;
 
-        private readonly Tweener tweener = new Tweener();
+        private SpriteFont spriteFont;
 
+        private string timerText;
+        private Vector2 timerPositon;
+        
+        private const int mainMenuStaticTargetRadius = 60;
+        private readonly int screenBoundsMargin = 80;
+        private readonly int targetRadius = 45;
+
+        private float timeUntilGameStarted = 0;
+        private readonly int gameDuration = 20;
+
+        private int hits = 0;
+        private int misses = 0;
+
+        private bool gameStarted = false;
+        private bool gameEnded = false;
+        
         public GameController()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -69,8 +69,8 @@ namespace FirstMonoGame.Scripts
         {
             timerPositon = new Vector2((Window.ClientBounds.Width / 2f), 0);
 
-            _ = new GameIdentityManager(Content);
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            new GameIdentityManager(Content);
 
             GameHelper.GameController = this;
             GameHelper.GraphicsDevice = GraphicsDevice;
@@ -122,26 +122,12 @@ namespace FirstMonoGame.Scripts
             }
             else HandleGameplay(); //run gameplay loop
 
+            //updating game logic
             GameIdentityManager.Instance.DrawGameIdentities(spriteBatch, GraphicsDevice);
             tweener.Update(gameTime.GetElapsedSeconds());
             OnUpdate?.Invoke(gameTime);
 
             base.Update(gameTime);
-        }
-
-        private void HandleResetGame() {
-            gameEnded = false;
-
-            hits = 0;
-            misses = 0;
-
-            TextDrawer.DestroyText("end");
-            TextDrawer.DestroyText("hits");
-            TextDrawer.DestroyText("misses");
-            TextDrawer.DestroyText("accuracy");
-            TextDrawer.DestroyText("reset");
-
-            GameIdentityManager.Instance.DestroyIdentity(endScreen);
         }
 
         private void HandleStartGame() {
@@ -207,6 +193,21 @@ namespace FirstMonoGame.Scripts
             TextDrawer.InstantiateTextLabel(spriteFont, "accuracy", $"ACCURACY:{CalculateAccuracy().ToString("F2")}%", endLabelAccuracyPosition, Color.White, Vector2.One * 1.3f);
 
             TextDrawer.InstantiateTextLabel(spriteFont, "reset", $"Hit esc to go back to main menu", endLabelResetPosition, Color.Black, Vector2.One * 1f);
+        }
+
+        private void HandleResetGame() {
+            gameEnded = false;
+
+            hits = 0;
+            misses = 0;
+
+            TextDrawer.DestroyText("end");
+            TextDrawer.DestroyText("hits");
+            TextDrawer.DestroyText("misses");
+            TextDrawer.DestroyText("accuracy");
+            TextDrawer.DestroyText("reset");
+
+            GameIdentityManager.Instance.DestroyIdentity(endScreen);
         }
 
         private float CalculateAccuracy() {

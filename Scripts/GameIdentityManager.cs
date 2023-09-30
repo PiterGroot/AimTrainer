@@ -9,18 +9,18 @@ namespace FirstMonoGame.Scripts {
 
         public static GameIdentityManager Instance;
         
-        public List<GameIdentity> ActiveGameIdentities { get; set; }
+        private Dictionary<int, GameIdentity> ActiveGameIdentities { get; set; }
         public ContentManager ContentManager { get; set; }
 
         public GameIdentityManager(ContentManager manager) {
-            ActiveGameIdentities = new List<GameIdentity>();
+            ActiveGameIdentities = new Dictionary<int, GameIdentity>();
             ContentManager = manager;
             Instance = this;
         }
 
         public void InstantiateIdentity(GameIdentity gameIdentity) {
-            if (!ActiveGameIdentities.Contains(gameIdentity)) {
-                ActiveGameIdentities.Add(gameIdentity);
+            if (!ActiveGameIdentities.ContainsKey(gameIdentity.UniqueId)) {
+                ActiveGameIdentities.Add(gameIdentity.UniqueId, gameIdentity);
                 UpdateGameIdentitiesOrder();
             }
             else {
@@ -30,8 +30,8 @@ namespace FirstMonoGame.Scripts {
         }
 
         public void DestroyIdentity(GameIdentity gameIdentity) {
-            if (ActiveGameIdentities.Contains(gameIdentity)) {
-                ActiveGameIdentities.Remove(gameIdentity);
+            if (ActiveGameIdentities.ContainsKey(gameIdentity.UniqueId)) {
+                ActiveGameIdentities.Remove(gameIdentity.UniqueId);
                 UpdateGameIdentitiesOrder();
             }
             else {
@@ -40,20 +40,21 @@ namespace FirstMonoGame.Scripts {
             }
         }
 
+        public bool IsUniqueIdentity(int identityId) => !ActiveGameIdentities.ContainsKey(identityId);
+
         private void UpdateGameIdentitiesOrder() {
-            ActiveGameIdentities = ActiveGameIdentities.OrderByDescending(identity => identity.RenderOrder).ToList();
-            ActiveGameIdentities.Reverse();
+            List<KeyValuePair<int, GameIdentity>> identityList = ActiveGameIdentities.ToList();
+            identityList.Sort((identityA, identityB) => identityA.Value.RenderOrder.CompareTo(identityB.Value.RenderOrder));
+
+            ActiveGameIdentities = identityList.ToDictionary(key => key.Key, value => value.Value);
         }
 
         public void DrawGameIdentities(SpriteBatch spriteBatch, GraphicsDevice device) {
             device.Clear(Color.CornflowerBlue);
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            int l = ActiveGameIdentities.Count;
-            for (int i = 0; i < l; i++) {
-                GameIdentity identity = ActiveGameIdentities[i];
+            foreach (GameIdentity identity in ActiveGameIdentities.Values) {
                 if (!identity.Active) continue;
-
                 DrawIdentity(spriteBatch, identity);
             }
 

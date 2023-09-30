@@ -11,6 +11,11 @@ using System;
 namespace FirstMonoGame.Scripts
 {
 #pragma warning disable IDE0090 
+
+    /// <summary>
+    /// Code written by Piter Groot / pitergroot.nl
+    /// </summary>
+    
     public class GameController : Game
     {
         public Action<GameTime> OnUpdate { get; set; }

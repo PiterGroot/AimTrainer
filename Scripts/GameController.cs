@@ -13,7 +13,7 @@ namespace FirstMonoGame.Scripts
 #pragma warning disable IDE0090 
     public class GameController : Game
     {
-        private GameIdentityManager gameIdentityManager;
+        public Action<GameTime> OnUpdate { get; set; }
 
         private GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
@@ -33,8 +33,9 @@ namespace FirstMonoGame.Scripts
         private int targetRadius = 45;
         private const int mainMenuStaticTargetRadius = 60;
 
-        private int gameDuration = 20;
+        private int gameDuration = 5;
         private bool gameStarted = false;
+        private bool gameEnded = false;
 
         private float timeUntilGameStarted = 0;
 
@@ -47,7 +48,7 @@ namespace FirstMonoGame.Scripts
         private GameIdentity crosshair;
         private GameIdentity target;
         private GameIdentity gameBackground;
-        private GameIdentity debugObject;
+        private GameIdentity endScreen;
 
         private readonly Tweener tweener = new Tweener();
 
@@ -68,19 +69,19 @@ namespace FirstMonoGame.Scripts
         {
             timerPositon = new Vector2((Window.ClientBounds.Width / 2f), 0);
 
-            gameIdentityManager = new GameIdentityManager(Content);
+            _ = new GameIdentityManager(Content);
+            spriteBatch = new SpriteBatch(GraphicsDevice);
 
             GameHelper.GameController = this;
-            GameHelper.graphicsDevice = GraphicsDevice;
+            GameHelper.GraphicsDevice = GraphicsDevice;
+            GameHelper.spriteBatch = spriteBatch;
             random = new Random();
-
+            
             base.Initialize();
         }
 
         protected override void LoadContent()
         {
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-            
             succesSFX = Content.Load<Song>("succesSFX");
             failSFX = Content.Load<Song>("failSFX");
             spriteFont = Content.Load<SpriteFont>("font");
@@ -95,15 +96,17 @@ namespace FirstMonoGame.Scripts
             crosshair.Transform.scale = new Vector2(2f, 2f);
             
             GameIdentityManager.Instance.InstantiateIdentity(crosshair);
-
-            
         }
 
         protected override void Update(GameTime gameTime)
         {
             KeyboardState keyboardState = Keyboard.GetState();
-            if (keyboardState.IsKeyDown(Keys.Escape))
+            if (keyboardState.IsKeyDown(Keys.Back))
                 Exit();
+
+            if (keyboardState.IsKeyDown(Keys.Escape) && gameEnded) {
+                HandleResetGame();
+            }
 
             GameTime = gameTime;
             Window.Title = $"Aim Trainer | Hits: {hits} Misses: {misses}";
@@ -119,10 +122,26 @@ namespace FirstMonoGame.Scripts
             }
             else HandleGameplay(); //run gameplay loop
 
-            gameIdentityManager.DrawGameIdentities(spriteBatch, GraphicsDevice);
+            GameIdentityManager.Instance.DrawGameIdentities(spriteBatch, GraphicsDevice);
             tweener.Update(gameTime.GetElapsedSeconds());
-            
+            OnUpdate?.Invoke(gameTime);
+
             base.Update(gameTime);
+        }
+
+        private void HandleResetGame() {
+            gameEnded = false;
+
+            hits = 0;
+            misses = 0;
+
+            TextDrawer.DestroyText("end");
+            TextDrawer.DestroyText("hits");
+            TextDrawer.DestroyText("misses");
+            TextDrawer.DestroyText("accuracy");
+            TextDrawer.DestroyText("reset");
+
+            GameIdentityManager.Instance.DestroyIdentity(endScreen);
         }
 
         private void HandleStartGame() {
@@ -156,22 +175,49 @@ namespace FirstMonoGame.Scripts
                 
                 if (hitTarget) hits++;
                 else misses++;
-                
-                MediaPlayer.Play(hitTarget ? succesSFX : failSFX);
+
+                PlaySFX(hitTarget ? succesSFX : failSFX);
                 RandomizeTargetPosition();
             });
-
         }
 
+        private void HandleGameEnd() {
+            gameStarted = false;
+            gameEnded = true;
+
+            GameIdentityManager.Instance.DestroyIdentity(gameBackground);
+            GameIdentityManager.Instance.DestroyIdentity(target);
+
+            endScreen = new GameIdentity("EndScreen", "sky_clean", 1, false);
+            endScreen.Transform.scale = Vector2.One * 2;
+            GameIdentityManager.Instance.InstantiateIdentity(endScreen);
+
+            Vector2 topCenterPosition = new Vector2((Window.ClientBounds.Width / 2f), 0);
+            Vector2 botCenterPosition = new Vector2((Window.ClientBounds.Width / 2f), Window.ClientBounds.Height);
+            
+            Vector2 endLabelPosition = topCenterPosition - new Vector2(75, 0);
+            Vector2 endLabelHitsPosition = topCenterPosition - new Vector2(100, -100);
+            Vector2 endLabelMissesPosition = topCenterPosition - new Vector2(130, -150);
+            Vector2 endLabelAccuracyPosition = topCenterPosition - new Vector2(270, -200);
+            Vector2 endLabelResetPosition = botCenterPosition - new Vector2(400, 50);
+
+            TextDrawer.InstantiateTextLabel(spriteFont, "end", "END", endLabelPosition, Color.White, Vector2.One * 2);
+            TextDrawer.InstantiateTextLabel(spriteFont, "hits", $"HITS:{hits}", endLabelHitsPosition, Color.White, Vector2.One * 1.3f);
+            TextDrawer.InstantiateTextLabel(spriteFont, "misses", $"MISSES:{misses}", endLabelMissesPosition, Color.White, Vector2.One * 1.3f);
+            TextDrawer.InstantiateTextLabel(spriteFont, "accuracy", $"ACCURACY:{CalculateAccuracy().ToString("F2")}%", endLabelAccuracyPosition, Color.White, Vector2.One * 1.3f);
+
+            TextDrawer.InstantiateTextLabel(spriteFont, "reset", $"Hit esc to go back to main menu", endLabelResetPosition, Color.Black, Vector2.One * 1f);
+        }
+
+        private float CalculateAccuracy() {
+            return ((float)hits / ((float)hits + (float)misses)) * 100;
+        }
+        
         private void UpdateGameTimer() {
             float gameTimer = (float)GameTime.TotalGameTime.TotalSeconds - timeUntilGameStarted;
             timerText = gameTimer.ToString("F2");
 
-            if (gameTimer >= gameDuration) {
-                GameIdentityManager.Instance.DestroyIdentity(gameBackground);
-                GameIdentityManager.Instance.DestroyIdentity(target);
-                gameStarted = false;
-            }
+            if (gameTimer >= gameDuration) HandleGameEnd();
         }
 
         private void RandomizeTargetPosition()
@@ -185,7 +231,6 @@ namespace FirstMonoGame.Scripts
             randomScreenPosition.Y = random.Next((int)minScreenBounds.Y, maxY);
 
             target.Transform.position = randomScreenPosition;
-            //target.Transform.scale = (Vector2.One * .5f) * RandomHandler.GetRandomFloatingNumber(.85f, 1.15f);
 
             tweener.CancelAndCompleteAll();
             tweener.TweenTo(target.Transform, target => target.scale, new Vector2(.6f, .6f), .1f, 0)
@@ -196,7 +241,7 @@ namespace FirstMonoGame.Scripts
         protected override void Draw(GameTime gameTime)
         {
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
-            if (gameStarted) DrawText(spriteBatch, spriteFont, timerText, timerPositon);
+            if (gameStarted) TextDrawer.DrawTextLabelOnce(spriteFont, timerText, timerPositon);
             spriteBatch.End();
 
             base.Draw(gameTime);

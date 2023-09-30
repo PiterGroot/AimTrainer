@@ -5,14 +5,17 @@ using System.Diagnostics;
 using System.Timers;
 using System;
 using Microsoft.Xna.Framework.Media;
+using System.Collections.Generic;
 
 namespace FirstMonoGame.Scripts
 {
 #pragma warning disable IDE1006 
     public static class GameHelper
     {
+        public static SpriteBatch spriteBatch { get; set; }
+        public static GraphicsDevice GraphicsDevice { get; set; }
+
         private static GameController gameController;
-        public static GraphicsDevice graphicsDevice;
         public static GameController GameController
         {
             get => gameController;
@@ -21,6 +24,7 @@ namespace FirstMonoGame.Scripts
                 if (value == null) return;
                 gameController = value;
                 RandomHandler.random = new Random();
+                GameController.OnUpdate += OnUpdate;
             }
         }
 
@@ -43,22 +47,14 @@ namespace FirstMonoGame.Scripts
             Debug.WriteLine(message.ToString());
         }
 
-        public static void DrawText(SpriteBatch spriteBatch, SpriteFont font, object message, Vector2 position) {
-            spriteBatch.DrawString(font, message.ToString(), position, Color.White);
-        }
-
-        public static void DrawText(SpriteBatch spriteBatch, SpriteFont font, object message, Vector2 position, Color textColor) {
-            spriteBatch.DrawString(font, message.ToString(), position, textColor);
-        }
-
-        public static void DrawStaticTexture(SpriteBatch spriteBatch, Texture2D texture, Vector2 position, Color color, float rotation, Vector2 scale) {
+        public static void DrawStaticTexture(Texture2D texture, Vector2 position, Color color, float rotation, Vector2 scale) {
             Vector2 origin = new Vector2(texture.Width / 2f, texture.Height / 2f);
             spriteBatch.Draw(texture, position, null, color, rotation, origin, scale, SpriteEffects.None, 0);
         }
 
         public static bool IsMouseInsideWindow() {
             MouseState mouseState = Mouse.GetState();
-            return graphicsDevice.Viewport.Bounds.Contains(mouseState.Position);
+            return GraphicsDevice.Viewport.Bounds.Contains(mouseState.Position);
         }
 
         public static void PlaySFX(Song sfx, bool doSafetyChecks = true) {
@@ -75,6 +71,69 @@ namespace FirstMonoGame.Scripts
             Debug.WriteLine($"{message}");
             Debug.WriteLine("");
             Environment.Exit(0);
+        }
+
+        private static void OnUpdate(GameTime gameTime) {
+            foreach (TextDrawer.LabelData label in TextDrawer.textLabels.Values) {
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+                TextDrawer.DrawTextLabelOnce(label.textFont, label.textMessage, 
+                    label.textPosition, label.textColor, label.textScale, label.textRotation);
+                spriteBatch.End();
+            }
+        }
+
+        public static class TextDrawer {
+
+            public static Dictionary<string, LabelData> textLabels = new Dictionary<string, LabelData>();
+            public static void DrawTextLabelOnce(SpriteFont font, object message, Vector2 position) {
+                spriteBatch.DrawString(font, message.ToString(), position, Color.White, 0, Vector2.Zero, Vector2.One, SpriteEffects.None, 0);
+            }
+
+            public static void DrawTextLabelOnce(SpriteFont font, object message, Vector2 position, Vector2 scale, float rotation = 0) {
+                spriteBatch.DrawString(font, message.ToString(), position, Color.White, rotation, Vector2.Zero, scale, SpriteEffects.None, 0);
+            }
+
+            public static void DrawTextLabelOnce(SpriteFont font, object message, Vector2 position, Color textColor, Vector2 scale, float rotation = 0) {
+                spriteBatch.DrawString(font, message.ToString(), position, textColor, rotation, Vector2.Zero, scale, SpriteEffects.None, 0);
+            }
+
+            public static void DestroyText(string labelId) {
+                if (textLabels.ContainsKey(labelId)) {
+                    textLabels.Remove(labelId);
+                }
+                else {
+                    ExitWithDebugMessage($"Text label '{labelId}' is already instantiated");
+                }
+            }
+
+            public static void InstantiateTextLabel(SpriteFont font, string labelId, object message, Vector2 position, Color textColor, Vector2 scale, float rotation = 0) {
+                if (!textLabels.ContainsKey(labelId)){
+                    textLabels.Add(labelId, new LabelData(labelId, message, position, textColor, rotation, scale, font));
+                }
+                else {
+                    ExitWithDebugMessage($"Text label '{labelId}:[{message}]' cannot be destroyed because it does not exist");
+                }
+            }
+
+            public struct LabelData {
+                public string labelId;
+                public object textMessage;
+                public Vector2 textPosition;
+                public Color textColor;
+                public float textRotation;
+                public Vector2 textScale;
+                public SpriteFont textFont;
+
+                public LabelData(string id, object message, Vector2 position, Color color, float rotation, Vector2 scale, SpriteFont font) {
+                    labelId = id;
+                    textMessage = message;
+                    textPosition = position;
+                    textColor = color;
+                    textRotation = rotation;
+                    textScale = scale;
+                    textFont = font;
+                }
+            }
         }
 
         public static class RandomHandler {
